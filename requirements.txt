@@ -2,3 +2,4 @@ pytest
 requests
 SQLAlchemy>=2.0,<2.1
 psycopg2<3.0
+python-dotenv<1.1

@@ -1,6 +1,9 @@
+from os import getenv
+
 import requests
 from sqlalchemy import create_engine, text
 
+import donotdrivenow
 from donotdrivenow.orm import Base
 from donotdrivenow.orm.football_data import FootballDataFixturesRaw
 
@@ -10,7 +13,7 @@ from donotdrivenow.orm.football_data import FootballDataFixturesRaw
 def fetch_england_football_fixtures():
     raw = requests.get('https://www.football-data.co.uk/fixtures.csv').text
 
-    engine = create_engine("postgresql+psycopg2://localhost/donotdrivenow", echo=True)
+    engine = create_engine(getenv('DATABASE_URI'), echo=True)
     Base.metadata.create_all(engine)
 
     print(["Used models:",
@@ -22,4 +25,5 @@ def fetch_england_football_fixtures():
 
 
 if __name__ == "__main__":
+    donotdrivenow.boot()
     print(fetch_england_football_fixtures())
