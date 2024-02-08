@@ -1,29 +1,28 @@
-from os import getenv
-
 import requests
-from sqlalchemy import create_engine, text
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-import donotdrivenow
-from donotdrivenow.orm import Base
-from donotdrivenow.orm.football_data import FootballDataFixturesRaw
+from donotdrivenow import boot
+from donotdrivenow.orm.data.raw import DataSource
 
 
 # https://www.football-data.co.uk/matches.php
 # Updates Tuesday at 13:00 UK time and Friday at 17:00 UK time
-def fetch_england_football_fixtures():
-    raw = requests.get('https://www.football-data.co.uk/fixtures.csv').text
+def fetch_england_football_fixtures(engine):
+    session = Session(engine)
+    source = session.execute(select(DataSource).where(DataSource.name == 'football-data.co.uk')).scalar()
 
-    engine = create_engine(getenv('DATABASE_URI'), echo=True)
-    Base.metadata.create_all(engine)
+    if source is None:
+        source = DataSource(name='football-data.co.uk',
+                            url='https://www.football-data.co.uk/fixtures.csv')
+        session.add(source)
+        session.flush()
+        session.commit()
 
-    print(["Used models:",
-           FootballDataFixturesRaw])
-
-    with engine.begin() as conn:
-        result = conn.execute(text("select 'hello world'"))
-        return result.all()
+    raw = requests.get(source.url).text
+    return raw
 
 
 if __name__ == "__main__":
-    donotdrivenow.boot()
-    print(fetch_england_football_fixtures())
+    dbengine = boot()
+    print(fetch_england_football_fixtures(dbengine))
