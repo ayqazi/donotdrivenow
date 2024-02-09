@@ -7,9 +7,7 @@ from donotdrivenow.orm.data.raw import DataSource
 
 # https://www.football-data.co.uk/matches.php
 # Updates Tuesday at 13:00 UK time and Friday at 17:00 UK time
-def fetch_england_football_fixtures(engine):
-    session = Session(engine)
-
+def grab_england_football_fixtures(session):
     with session.begin():
         source = session.execute(select(DataSource).where(DataSource.name == 'football-data.co.uk')).scalar()
 
@@ -22,6 +20,12 @@ def fetch_england_football_fixtures(engine):
     return raw
 
 
-if __name__ == "__main__":
+def grab_all():
     dbengine = boot()
-    print(fetch_england_football_fixtures(dbengine))
+
+    with Session(dbengine) as session:
+        print(grab_england_football_fixtures(session))
+
+
+if __name__ == "__main__":
+    grab_all()
