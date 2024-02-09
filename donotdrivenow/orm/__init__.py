@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-import sqlalchemy.dialects.postgresql as pgtypes
+import sqlalchemy.dialects.postgresql
 import uuid6
 from sqlalchemy import event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -9,12 +9,13 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     type_annotation_map = {
-        str: pgtypes.TEXT,
+        str: sqlalchemy.dialects.postgresql.TEXT,
+        uuid.UUID: sqlalchemy.dialects.postgresql.UUID(as_uuid=True)
     }
 
 
 class Id:
-    id: Mapped[uuid.UUID] = mapped_column(pgtypes.UUID(as_uuid=True), primary_key=True, default=uuid6.uuid7)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid6.uuid7)
 
 
 class Timestamps:

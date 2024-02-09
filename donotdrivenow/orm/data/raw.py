@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,10 +14,10 @@ class DataSource(Base, Id, Timestamps):
     url: Mapped[str]
 
 
-class Grab(Id, Timestamps, Base):
+class Grab(Base, Id, Timestamps):
     __tablename__ = "grab"
 
-    data_source_id: Mapped[int] = mapped_column(ForeignKey("data_source.id"))
+    data_source_id: Mapped[UUID] = mapped_column(ForeignKey("data_source.id"))
     grabbed: Mapped[datetime]
     data: Mapped[str]
     content_type: Mapped[str]
