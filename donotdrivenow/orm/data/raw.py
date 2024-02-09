@@ -7,7 +7,7 @@ from donotdrivenow.orm import Id, Timestamps, Base
 class DataSource(Id, Timestamps, Base):
     __tablename__ = "data_source"
 
-    name: Mapped[str]  # TODO: add unique constraint
+    name: Mapped[str] = mapped_column(unique=True)
     url: Mapped[str]
 
 
