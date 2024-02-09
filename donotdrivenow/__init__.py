@@ -3,19 +3,15 @@ from os import getenv
 from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import create_engine
 
-import donotdrivenow.orm.data.raw as raw
-from donotdrivenow.orm import Base
+APP = {"booted": False}
 
 
 def boot():
-    load_dotenv(find_dotenv('.env'))
-    load_dotenv(find_dotenv('.env.local'))
+    if not APP["booted"]:
+        load_dotenv(find_dotenv('.env'))
+        load_dotenv(find_dotenv('.env.local'))
 
-    print(["Used models:",
-           raw.DataSource,
-           raw.Grab])
+        APP["engine"] = create_engine(getenv('DATABASE_URI'), echo=True)
+        APP["booted"] = True
 
-    engine = create_engine(getenv('DATABASE_URI'), echo=True)
-    Base.metadata.create_all(engine)
-
-    return engine
+    return APP["engine"]

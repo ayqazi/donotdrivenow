@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,3 +17,6 @@ class Grab(Id, Timestamps, Base):
     __tablename__ = "grab"
 
     data_source_id: Mapped[int] = mapped_column(ForeignKey("data_source.id"))
+    grabbed: Mapped[datetime]
+    data: Mapped[str]
+    content_type: Mapped[str]
