@@ -10,14 +10,14 @@ from donotdrivenow.orm.data.raw import DataSource
 # Updates Tuesday at 13:00 UK time and Friday at 17:00 UK time
 def fetch_england_football_fixtures(engine):
     session = Session(engine)
-    source = session.execute(select(DataSource).where(DataSource.name == 'football-data.co.uk')).scalar()
 
-    if source is None:
-        source = DataSource(name='football-data.co.uk',
-                            url='https://www.football-data.co.uk/fixtures.csv')
-        session.add(source)
-        session.flush()
-        session.commit()
+    with session.begin():
+        source = session.execute(select(DataSource).where(DataSource.name == 'football-data.co.uk')).scalar()
+
+        if source is None:
+            source = DataSource(name='football-data.co.uk',
+                                url='https://www.football-data.co.uk/fixtures.csv')
+            session.add(source)
 
     raw = requests.get(source.url).text
     return raw
