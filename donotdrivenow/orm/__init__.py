@@ -10,7 +10,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 class Base(DeclarativeBase):
     type_annotation_map = {
         str: sqlalchemy.dialects.postgresql.TEXT,
-        uuid.UUID: sqlalchemy.dialects.postgresql.UUID(as_uuid=True)
+        uuid.UUID: sqlalchemy.dialects.postgresql.UUID(as_uuid=True),
+        dict: sqlalchemy.dialects.postgresql.JSONB,
     }
 
 

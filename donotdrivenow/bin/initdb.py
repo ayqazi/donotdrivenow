@@ -4,7 +4,8 @@ from donotdrivenow import boot
 from donotdrivenow.orm import Base
 from donotdrivenow.orm.data import raw
 
-if __name__ == "__main__":
+
+def run():
     engine = boot()
 
     print(["Used models:",
@@ -12,3 +13,7 @@ if __name__ == "__main__":
            raw.Grab])
 
     Base.metadata.create_all(engine)
+
+
+if __name__ == "__main__":
+    run()
