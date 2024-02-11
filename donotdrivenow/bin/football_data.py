@@ -53,7 +53,7 @@ def ingest_uk_football_fixtures(session, grab):
         if ingest is None:
             print("football-data.co.uk: initiating ingestion", file=sys.stderr)
             ingested_data = []
-            for row in csv.reader(StringIO(grab.data), delimiter=','):
+            for row in csv.DictReader(StringIO(grab.data), delimiter=','):
                 ingested_data.append(row)
             ingest = Ingest(grab=grab, ingested=datetime.now(timezone.utc), data=ingested_data)
             session.add(ingest)
