@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+from typing import List
+from uuid import UUID
 
 import sqlalchemy.dialects.postgresql
 import uuid6
-from sqlalchemy import event
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import event, ForeignKey, Column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -33,3 +35,33 @@ def timestamps_before_insert(_mapper, _connection, target):
 @event.listens_for(Timestamps, identifier='before_update', propagate=True)
 def timestamps_before_insert(_mapper, _connection, target):
     target.modified = datetime.now(timezone.utc)
+
+
+class DataSource(Base, Id, Timestamps):
+    __tablename__ = "data_source"
+
+    name: Mapped[str] = mapped_column(unique=True)
+    url: Mapped[str]
+
+    grabs: Mapped[List["Grab"]] = relationship(back_populates="data_source")
+
+
+class Grab(Base, Id, Timestamps):
+    __tablename__ = "grab"
+
+    data_source_id: Mapped[UUID] = mapped_column(ForeignKey("data_source.id"))
+    data_source: Mapped["DataSource"] = relationship(back_populates="grabs")
+    grabbed: Mapped[datetime]
+    data: Mapped[str]
+    content_type: Mapped[str]
+
+    ingests: Mapped[List["Ingest"]] = relationship(back_populates="grab")
+
+
+class Ingest(Base, Id, Timestamps):
+    __tablename__ = "ingest"
+
+    grab_id: Mapped[UUID] = mapped_column(ForeignKey("grab.id"))
+    grab: Mapped["Grab"] = relationship(back_populates="ingests")
+    ingested: Mapped[datetime]
+    data = Column(sqlalchemy.dialects.postgresql.JSONB)

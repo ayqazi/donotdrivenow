@@ -9,7 +9,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from donotdrivenow import boot
-from donotdrivenow.orm.data.raw import DataSource, Grab, Ingest
+from donotdrivenow.orm import DataSource, Grab, Ingest
 
 
 # https://www.football-data.co.uk/matches.php

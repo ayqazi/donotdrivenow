@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 from donotdrivenow import boot
-from donotdrivenow.orm import Base
-from donotdrivenow.orm.data import raw
+from donotdrivenow.orm import Base, DataSource, Grab
 
 
 def run():
     engine = boot()
 
     print(["Used models:",
-           raw.DataSource,
-           raw.Grab])
+           DataSource,
+           Grab])
 
     Base.metadata.create_all(engine)
 
