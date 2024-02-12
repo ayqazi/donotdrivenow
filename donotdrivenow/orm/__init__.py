@@ -18,12 +18,12 @@ class Base(DeclarativeBase):
 
 
 class Id:
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid6.uuid7)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid6.uuid7, sort_order=-9999)
 
 
 class Timestamps:
-    created: Mapped[datetime]
-    modified: Mapped[datetime]
+    created: Mapped[datetime] = mapped_column(sort_order=9999)
+    modified: Mapped[datetime] = mapped_column(sort_order=9999)
 
 
 @event.listens_for(Timestamps, identifier='before_insert', propagate=True)
@@ -64,7 +64,7 @@ class Ingest(Base, Id, Timestamps):
     grab_id: Mapped[UUID] = mapped_column(ForeignKey("grab.id"))
     grab: Mapped["Grab"] = relationship(back_populates="ingests")
     ingested: Mapped[datetime]
-    data = Column(sqlalchemy.dialects.postgresql.JSONB)
+    data = Column(sqlalchemy.dialects.postgresql.JSONB, nullable=False)
 
 
 # == Data source specific tables
