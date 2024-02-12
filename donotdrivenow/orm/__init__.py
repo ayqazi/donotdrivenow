@@ -62,20 +62,31 @@ class Ingest(Base, Id, Timestamps):
     __tablename__ = "ingest"
 
     grab_id: Mapped[UUID] = mapped_column(ForeignKey("grab.id"))
-    grab: Mapped["Grab"] = relationship(back_populates="ingests")
+    grab: Mapped["Grab"] = relationship()
     ingested: Mapped[datetime]
     data = Column(sqlalchemy.dialects.postgresql.JSONB, nullable=False)
 
 
 # == Data source specific tables
 
-class FootballDataCoUkFixture(Base, Id, Timestamps):
-    __tablename__ = "football_data_co_uk_fixture"
+class FootballDataCoUkTransform1(Base, Id, Timestamps):
+    __tablename__ = "football_data_co_uk_transform_1"
 
     ingest_id: Mapped[UUID] = mapped_column(ForeignKey("ingest.id"))
     ingest: Mapped["Ingest"] = relationship()
-    transformed: Mapped[datetime]
+
+    fixtures: Mapped[List['FootballDataCoUkFixture']] = relationship(back_populates='transform')
+
     code_version: Mapped[str]
+    completed: Mapped[datetime] = mapped_column(nullable=True)
+    complete_success: Mapped[bool] = mapped_column(nullable=True)
+
+
+class FootballDataCoUkFixture(Base, Id, Timestamps):
+    __tablename__ = 'football_data_co_uk_fixture'
+
+    transform_id: Mapped[UUID] = mapped_column(ForeignKey('football_data_co_uk_transform_1.id'))
+    transform: Mapped['FootballDataCoUkTransform1'] = relationship(back_populates='fixtures')
 
     league: Mapped[str] = mapped_column(String(2))
     division: Mapped[str] = mapped_column(String(2))

@@ -11,7 +11,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from donotdrivenow import boot
-from donotdrivenow.orm import DataSource, Grab, Ingest, FootballDataCoUkFixture
+from donotdrivenow.orm import DataSource, Grab, Ingest, FootballDataCoUkFixture, FootballDataCoUkTransform1
 
 CODE_VERSION = "2024021101"  # Format: YYYYMMDDNN where NN is a 0-padded number
 
@@ -89,28 +89,37 @@ def fixture_division_league(ingested_fixture):
 # the code version was bumped up even if all the data is the same.
 def transform_stage1_uk_football_fixtures(session, ingest):
     with session.begin():
+        t1 = session.execute(
+            select(FootballDataCoUkTransform1)
+            .where(FootballDataCoUkTransform1.ingest_id == ingest.id)
+            .where(FootballDataCoUkTransform1.code_version == CODE_VERSION)
+            .where(FootballDataCoUkTransform1.complete_success == True)  # noqa
+        ).scalar()
+        if t1 is None:
+            print('No transform1 found for this code version and ingest - transforming', file=sys.stderr)
+        else:
+            print('Transform already exists', file=sys.stderr)
+            return
+
+        t1 = FootballDataCoUkTransform1(ingest=ingest,
+                                        code_version=CODE_VERSION)
+        session.add(t1)
+
         for index, ingested_fixture in enumerate(ingest.data):
             starting = fixture_start_datetime_utc(ingested_fixture)
             league, division = fixture_division_league(ingested_fixture)
-            t1_fixture = session.execute(
-                select(FootballDataCoUkFixture)
-                .where(FootballDataCoUkFixture.ingest_id == ingest.id)
-                .where(FootballDataCoUkFixture.code_version == CODE_VERSION)
-                .where(FootballDataCoUkFixture.home_team == ingested_fixture['HomeTeam'])
-                .where(FootballDataCoUkFixture.away_team == ingested_fixture['AwayTeam'])
-            ).scalar()
-            if t1_fixture is None:
-                t1_fixture = FootballDataCoUkFixture(
-                    ingest=ingest,
-                    transformed=datetime.now(timezone.utc),
-                    code_version=CODE_VERSION,
-                    league=league,
-                    division=division,
-                    starting=starting,
-                    home_team=ingested_fixture['HomeTeam'],
-                    away_team=ingested_fixture['AwayTeam'],
-                )
-                session.add(t1_fixture)
+            t1_fixture = FootballDataCoUkFixture(
+                transform=t1,
+                league=league,
+                division=division,
+                starting=starting,
+                home_team=ingested_fixture['HomeTeam'],
+                away_team=ingested_fixture['AwayTeam'],
+            )
+            session.add(t1_fixture)
+        t1.completed = datetime.now(timezone.utc)
+        t1.complete_success = True
+        session.add(t1)
 
         session.flush()
 
