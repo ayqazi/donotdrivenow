@@ -5,7 +5,7 @@ from uuid import UUID
 
 import sqlalchemy.dialects.postgresql
 import uuid6
-from sqlalchemy import event, ForeignKey, Column
+from sqlalchemy import event, ForeignKey, Column, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -65,3 +65,20 @@ class Ingest(Base, Id, Timestamps):
     grab: Mapped["Grab"] = relationship(back_populates="ingests")
     ingested: Mapped[datetime]
     data = Column(sqlalchemy.dialects.postgresql.JSONB)
+
+
+# == Data source specific tables
+
+class FootballDataCoUkFixture(Base, Id, Timestamps):
+    __tablename__ = "football_data_co_uk_fixture"
+
+    ingest_id: Mapped[UUID] = mapped_column(ForeignKey("ingest.id"))
+    ingest: Mapped["Ingest"] = relationship()
+    transformed: Mapped[datetime]
+    code_version: Mapped[str]
+
+    league: Mapped[str] = mapped_column(String(2))
+    division: Mapped[str] = mapped_column(String(2))
+    starting: Mapped[datetime]
+    home_team: Mapped[str]
+    away_team: Mapped[str]
