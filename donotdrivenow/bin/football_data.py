@@ -11,7 +11,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from donotdrivenow import boot
-from donotdrivenow.orm import DataSource, Grab, Ingest, FootballDataCoUkFixture, FootballDataCoUkTransform1
+from donotdrivenow.orm import DataSource, Grab, Ingest, FootballDataCoUkFixture, FootballDataCoUkTransform1, Fixture
 
 CODE_VERSION = "2024021101"  # Format: YYYYMMDDNN where NN is a 0-padded number
 
@@ -99,20 +99,20 @@ def transform_stage1_uk_football_fixtures(session, ingest):
             print('No transform1 found for this code version and ingest - transforming', file=sys.stderr)
         else:
             print('Transform already exists', file=sys.stderr)
-            return
+            return t1
 
         t1 = FootballDataCoUkTransform1(ingest=ingest,
                                         code_version=CODE_VERSION)
         session.add(t1)
 
         for index, ingested_fixture in enumerate(ingest.data):
-            starting = fixture_start_datetime_utc(ingested_fixture)
+            start = fixture_start_datetime_utc(ingested_fixture)
             league, division = fixture_division_league(ingested_fixture)
             t1_fixture = FootballDataCoUkFixture(
                 transform=t1,
                 league=league,
                 division=division,
-                starting=starting,
+                start=start,
                 home_team=ingested_fixture['HomeTeam'],
                 away_team=ingested_fixture['AwayTeam'],
             )
@@ -120,8 +120,30 @@ def transform_stage1_uk_football_fixtures(session, ingest):
         t1.completed = datetime.now(timezone.utc)
         t1.complete_success = True
         session.add(t1)
-
         session.flush()
+
+        return t1
+
+
+# Enhancement: append-only gold fixture enable to notify and indicate when a fixture has been replaced. But not really
+# needed for use-case. This would help us find situations where a mistake was made in the data source and an update was
+# issued so we are able to tell between erroneous fixtures and corrected ones
+def transform_final_uk_football_fixtures(session, transform1):
+    with session.begin():
+        for transform_fixture in transform1.fixtures:
+            gold_fixture = session.execute(
+                select(Fixture).where(Fixture.transform_fixture_id == transform_fixture.id)
+            ).scalar()
+            if gold_fixture is None:
+                gold_fixture = Fixture(
+                    transform_fixture_id=transform_fixture.id,
+                    sport='football',
+                    home_team=transform_fixture.home_team,
+                    away_team=transform_fixture.away_team,
+                    start=transform_fixture.start,
+                )
+                session.add(gold_fixture)
+                session.flush()
 
 
 def process_all():
@@ -130,7 +152,8 @@ def process_all():
     with Session(engine) as session:
         grab = grab_uk_football_fixtures(session)
         ingest = ingest_uk_football_fixtures(session, grab)
-        transform_stage1_uk_football_fixtures(session, ingest)
+        transform1 = transform_stage1_uk_football_fixtures(session, ingest)
+        transform_final_uk_football_fixtures(session, transform1)
         session.commit()
 
 

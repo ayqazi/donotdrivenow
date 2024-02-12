@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Literal
 from uuid import UUID
 
 import sqlalchemy.dialects.postgresql
@@ -8,12 +8,15 @@ import uuid6
 from sqlalchemy import event, ForeignKey, Column, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+Sport = Literal['football', 'rugbyleague', 'cricket']
+
 
 class Base(DeclarativeBase):
     type_annotation_map = {
         str: sqlalchemy.dialects.postgresql.TEXT,
         uuid.UUID: sqlalchemy.dialects.postgresql.UUID(as_uuid=True),
         dict: sqlalchemy.dialects.postgresql.JSONB,
+        Sport: sqlalchemy.Enum('football', 'rugbyleague', 'cricket', name='sports'),
     }
 
 
@@ -67,6 +70,16 @@ class Ingest(Base, Id, Timestamps):
     data = Column(sqlalchemy.dialects.postgresql.JSONB, nullable=False)
 
 
+class Fixture(Base, Id, Timestamps):
+    __tablename__ = 'fixture'
+
+    transform_fixture_id: Mapped[UUID]
+    sport: Mapped[Sport]
+    home_team: Mapped[str]
+    away_team: Mapped[str]
+    start: Mapped[datetime]  # Start date and time in UTC
+
+
 # == Data source specific tables
 
 class FootballDataCoUkTransform1(Base, Id, Timestamps):
@@ -90,6 +103,6 @@ class FootballDataCoUkFixture(Base, Id, Timestamps):
 
     league: Mapped[str] = mapped_column(String(2))
     division: Mapped[str] = mapped_column(String(2))
-    starting: Mapped[datetime]
+    start: Mapped[datetime]
     home_team: Mapped[str]
     away_team: Mapped[str]
