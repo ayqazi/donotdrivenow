@@ -18,16 +18,24 @@ Create DB as configured in `DATABASE_URI` in `.env.local`.
 
 Now commands can be run:
 
-Create DB schema
+### Create DB schema
 
 ```shell
 VENVPATH/python -m donotdrivenow.bin.initdb
 ```
 
-Ingest
+### Ingest
 
 ```shell
 VENVPATH/python -m donotdrivenow.bin.football_data
 ```
 
 The `fixtures` table now contains the gold data that can be used to find out if I should drive now.
+
+### Run
+
+Run this to find out which teams are playing today
+
+```shell
+VENVPATH/python -m donotdrivenow.bin.run 2>/dev/null
+```
