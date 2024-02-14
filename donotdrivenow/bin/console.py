@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 
-import code
+import sys
 
+from sqlalchemy import *
 from sqlalchemy.orm import *
 
 import donotdrivenow
+import donotdrivenow.util as util
+from donotdrivenow.orm import *
 
 
 def get_session():
-    session = Session(donotdrivenow.boot())
-    return session
+    return Session(donotdrivenow.boot())
 
 
-if __name__ == "__main__":
-    variables = globals().copy()
-    variables.update(locals())
-    shell = code.InteractiveConsole(variables)
-    shell.interact()
+# if __name__ == "__main__":
+#     variables = globals().copy()
+#     variables.update(locals())
+#     shell = code.InteractiveConsole(variables)
+#     shell.interact()
