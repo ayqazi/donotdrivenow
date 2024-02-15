@@ -6,12 +6,12 @@ from datetime import datetime, timezone
 from io import StringIO
 from zoneinfo import ZoneInfo
 
-import requests
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from donotdrivenow import boot
-from donotdrivenow.orm import DataSource, Grab, Ingest, FootballDataCoUkFixture, FootballDataCoUkTransform1, Fixture
+from donotdrivenow.grab import grab_simple_source
+from donotdrivenow.orm import Ingest, FootballDataCoUkFixture, FootballDataCoUkTransform1, Fixture
 
 CODE_VERSION = "2024021101"  # Format: YYYYMMDDNN where NN is a 0-padded number
 
@@ -19,36 +19,10 @@ CODE_VERSION = "2024021101"  # Format: YYYYMMDDNN where NN is a 0-padded number
 # https://www.football-data.co.uk/matches.php
 # Updates Tuesday at 13:00 UK time and Friday at 17:00 UK time
 def grab_uk_football_fixtures(session):
-    with session.begin():
-        source = session.execute(select(DataSource).where(DataSource.name == 'football-data.co.uk')).scalar()
-        now = datetime.now(timezone.utc)
-
-        if source is None:
-            source = DataSource(name='football-data.co.uk',
-                                url='https://www.football-data.co.uk/fixtures.csv')
-            session.add(source)
-            session.flush()
-
-        grab = session.execute(select(Grab).where(Grab.data_source_id == source.id)
-                               .where(text("grabbed::date = now()::date"))).scalar()
-        if (grab is not None and
-                grab.grabbed.year == now.year and
-                grab.grabbed.month == now.month and
-                grab.grabbed.day == now.day):
-            print(f"{source.name}: already grabbed today", file=sys.stderr)
-        else:
-            print(f"{source.name}: initiating grab", file=sys.stderr)
-            rawdata = requests.get('https://www.football-data.co.uk/fixtures.csv').text
-
-            grab = Grab(data_source_id=source.id,
-                        grabbed=now,
-                        data=rawdata,
-                        content_type="text/csv")
-            session.add(grab)
-            session.flush()
-            session.commit()
-
-    return grab
+    return grab_simple_source(name='football-data.co.uk',
+                              url='https://www.football-data.co.uk/fixtures.csv',
+                              content_type='text/csv',
+                              session=session)
 
 
 def ingest_uk_football_fixtures(session, grab):
