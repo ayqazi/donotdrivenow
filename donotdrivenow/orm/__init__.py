@@ -57,6 +57,7 @@ class Grab(Base, Id, Timestamps):
     grabbed: Mapped[datetime]
     data: Mapped[str]
     content_type: Mapped[str]
+    sha3_256sum: Mapped[str]
 
     ingests: Mapped[List["Ingest"]] = relationship(back_populates="grab")
 

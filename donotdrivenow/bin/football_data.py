@@ -29,7 +29,7 @@ def ingest_uk_football_fixtures(session, grab):
     with session.begin():
         ingest = session.scalar(select(Ingest).where(Ingest.grab_id == grab.id))
         if ingest is None:
-            print("football-data.co.uk: initiating ingestion", file=sys.stderr)
+            print(f"{grab.data_source.name}: initiating ingestion", file=sys.stderr)
             ingested_data = []
             for row in csv.DictReader(StringIO(grab.data), delimiter=','):
                 ingested_data.append(row)
@@ -37,7 +37,7 @@ def ingest_uk_football_fixtures(session, grab):
             session.add(ingest)
             session.flush()
         else:
-            print("football-data.co.uk: already ingested", file=sys.stderr)
+            print(f"{grab.data_source.name}: already ingested", file=sys.stderr)
     return ingest
 
 
