@@ -14,8 +14,4 @@ def get_session():
     return Session(donotdrivenow.boot())
 
 
-# if __name__ == "__main__":
-#     variables = globals().copy()
-#     variables.update(locals())
-#     shell = code.InteractiveConsole(variables)
-#     shell.interact()
+session = get_session()
