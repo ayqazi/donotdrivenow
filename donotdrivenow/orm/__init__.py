@@ -8,7 +8,7 @@ import uuid6
 from sqlalchemy import event, ForeignKey, Column, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-Sport = Literal['football', 'rugbyleague', 'cricket']
+Sport = Literal['football', 'rugbyleague', 'rugbyunion', 'cricket']
 
 
 class Base(DeclarativeBase):
@@ -16,7 +16,7 @@ class Base(DeclarativeBase):
         str: sqlalchemy.dialects.postgresql.TEXT,
         uuid.UUID: sqlalchemy.dialects.postgresql.UUID(as_uuid=True),
         dict: sqlalchemy.dialects.postgresql.JSONB,
-        Sport: sqlalchemy.Enum('football', 'rugbyleague', 'cricket', name='sports'),
+        Sport: sqlalchemy.Enum('football', 'rugbyleague', 'rugbyunion', 'cricket', name='sports'),
     }
 
 
@@ -104,6 +104,30 @@ class FootballDataCoUkFixture(Base, Id, Timestamps):
 
     league: Mapped[str] = mapped_column(String(2))
     division: Mapped[str] = mapped_column(String(2))
+    start: Mapped[datetime]
+    home_team: Mapped[str]
+    away_team: Mapped[str]
+
+
+class FixturedownloadComTransform1(Base, Id, Timestamps):
+    __tablename__ = 'fixture_download_com_transform_1'
+
+    ingest_id: Mapped[UUID] = mapped_column(ForeignKey('ingest.id'))
+    ingest: Mapped['Ingest'] = relationship()
+
+    fixtures: Mapped[List['FixturedownloadComFixture']] = relationship(back_populates='transform')
+
+    code_version: Mapped[str]
+    completed: Mapped[datetime] = mapped_column(nullable=True)
+    complete_success: Mapped[bool] = mapped_column(nullable=True)
+
+
+class FixturedownloadComFixture(Base, Id, Timestamps):
+    __tablename__ = 'fixture_download_com_fixture'
+
+    transform_id: Mapped[UUID] = mapped_column(ForeignKey('fixture_download_com_transform_1.id'))
+    transform: Mapped['FixturedownloadComTransform1'] = relationship(back_populates='fixtures')
+
     start: Mapped[datetime]
     home_team: Mapped[str]
     away_team: Mapped[str]
