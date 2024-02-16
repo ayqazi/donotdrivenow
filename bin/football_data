@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -euo pipefail
+
+APP="/Users/asfandqazi/psrc/donotdrivenow"
+export PYTHONPATH="${APP}"
+
+"${APP}/venv/bin/python" -m donotdrivenow.bin.football_data >> "${APP}/log/run_football.log" 2>&1
