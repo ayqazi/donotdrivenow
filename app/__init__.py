@@ -1,20 +1,19 @@
 import logging
 import os
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from advanced_alchemy.extensions.litestar.plugins.init.config.asyncio import autocommit_before_send_handler
 from litestar import get, Litestar, status_codes
-from litestar.contrib.sqlalchemy.plugins import SQLAlchemySerializationPlugin
-from litestar.datastructures import State
+from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import NotFoundException, ClientException
 from litestar.logging import LoggingConfig
 from litestar.middleware.logging import LoggingMiddlewareConfig
 from sqlalchemy import select, ForeignKey
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -51,36 +50,15 @@ class Fixture(Base):
     start_time: Mapped[datetime]
 
 
-@asynccontextmanager
-async def db_connection(app: Litestar) -> AsyncGenerator[None, None]:
-    engine = getattr(app.state, "engine", None)
-    if engine is None:
-        db_uri = os.getenv("DB_URI", "postgresql+asyncpg://localhost/donotdrivenow_dev")
-        engine = create_async_engine(url=db_uri, echo=True)
-        app.state.engine = engine
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
+async def provide_session(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
     try:
-        yield
-    finally:
-        await engine.dispose()
-
-
-SESSION_MAKER = async_sessionmaker(expire_on_commit=False)
-
-
-async def provide_session(state: State) -> AsyncGenerator[AsyncSession, None]:
-    async with SESSION_MAKER(bind=state.engine) as session:
-        try:
-            async with session.begin():
-                yield session
-        except IntegrityError as exc:
-            raise ClientException(
-                status_code=status_codes.HTTP_409_CONFLICT,
-                detail=str(exc),
-            ) from exc
+        async with db_session.begin():
+            yield db_session
+    except IntegrityError as exc:
+        raise ClientException(
+            status_code=status_codes.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
 
 @get("/drive_now")
@@ -108,6 +86,13 @@ async def get_latest_fixture(session: AsyncSession) -> Fixture:
     return fixture
 
 
+DB_CONFIG = SQLAlchemyAsyncConfig(
+    connection_string=os.getenv("DB_URI", "postgresql+asyncpg://localhost/donotdrivenow_dev"),
+    metadata=Base.metadata,
+    create_all=True,
+    before_send_handler=autocommit_before_send_handler,
+)
+
 LOGGING_CONFIG = LoggingConfig(
     root={"level": logging.getLevelName(logging.DEBUG), "handlers": ["console"]},
     formatters={
@@ -119,8 +104,9 @@ LOGGING_MIDDLEWARE_CONFIG = LoggingMiddlewareConfig()
 APPLICATION = Litestar(
     [get_drive_now, get_latest_fixture],
     dependencies={"session": provide_session},
-    lifespan=[db_connection],
     logging_config=LOGGING_CONFIG,
     middleware=[LOGGING_MIDDLEWARE_CONFIG.middleware],
-    plugins=[SQLAlchemySerializationPlugin()],
+    plugins=[
+        SQLAlchemyPlugin(DB_CONFIG),
+    ],
 )
