@@ -17,15 +17,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
-@dataclass
-class DriveNow:
-    answer: bool
-    location: str
-    start_time: datetime
-    sport: str
-    home_team: str
-
-
 class Base(DeclarativeBase):
     __abstract__ = True
 
@@ -61,14 +52,27 @@ async def provide_session(db_session: AsyncSession) -> AsyncGenerator[AsyncSessi
         ) from exc
 
 
+@dataclass
+class DriveNowFixture:
+    answer: bool
+    location: str
+    start_time: datetime
+    sport: str
+    home_team: str
+
+
 @get("/drive_now")
-async def get_drive_now(session: AsyncSession) -> DriveNow:
-    result = await session.execute(select(Fixture))
+async def get_drive_now(session: AsyncSession) -> DriveNowFixture:
+    result = await session.execute(
+        select(Fixture)
+        .join(Location)
+        .where(Location.id == Fixture.location_id)
+    )
     fixture = result.scalar_one_or_none()
     if fixture is None:
         raise NotFoundException("No fixture was found")
 
-    return DriveNow(
+    return DriveNowFixture(
         answer=False,
         location=fixture.location.name,
         start_time=fixture.start_time,
