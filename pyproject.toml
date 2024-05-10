@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "donotdrivenow"
+version = "1.0.0"
+description = ""
+authors = ["Asfand Qazi <ayqazi@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+uuid6 = "^2024.1.12"
+litestar = { extras = ["sqlalchemy", "standard"], version = "^2.8.3" }
+asyncpg = "^0.29.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
