@@ -1,3 +1,4 @@
 !/.idea
 !/.idea/**/*
 /NOTES.md
+/.env.*.local

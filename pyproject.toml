@@ -1,9 +1,5 @@
 [tool.poetry]
-name = "donotdrivenow"
-version = "1.0.0"
-description = ""
-authors = ["Asfand Qazi <ayqazi@gmail.com>"]
-readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
