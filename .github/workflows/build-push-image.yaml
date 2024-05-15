@@ -68,3 +68,40 @@ jobs:
           subject-name: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}'
           subject-digest: '${{ steps.push.outputs.digest }}'
           push-to-registry: true
+
+  deploy:
+    runs-on: 'ubuntu-22.04'
+    needs: [ 'build-push-image' ]
+
+    permissions: { }
+
+    steps:
+    - name: 'Install kustomize'
+      run: |
+        set -euo pipefail
+        curl -s "${INST_KUSTOMIZE_URL}" | bash -x
+        chmod +x kustomize
+      env:
+        INST_KUSTOMIZE_URL: 'https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh'
+
+    - name: 'Checkout minikube-config'
+      uses: 'actions/checkout@v4'
+      with:
+        repository: 'ayqazi/minikube-config'
+        token: '${{ secrets.WRITE_TO_MINIKUB_CONFIG_TOKEN }}'
+        path: 'minikube-config'
+        persist-credentials: true
+        ref: master
+
+    - name: 'Update donotdrivenow image tag'
+      run: |
+        ls -l
+        ls -l minikube-config
+        cd minikube-config/donotdrivenow
+        ls -l
+        git config user.name 'donotdrivenow-deploy-bot'
+        git config user.email 'donotdrivenow-deploy-bot@donotreply.example'
+        kustomize edit set image kustomize-managed-image-name='${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}'
+        git add kustomization.yaml
+        git commit -m 'Deploy donotdrivenow@${{ github.sha }}' 
+        git push
