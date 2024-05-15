@@ -1,5 +1,5 @@
 # Based on https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
-name: 'Build image'
+name: 'Build and push image'
 
 on:
   push:
