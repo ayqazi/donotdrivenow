@@ -98,7 +98,7 @@ jobs:
       run: |
         ls -l
         ls -l minikube-config
-        cd minikube-config/donotdrivenow
+        cd minikube-config/donotdrivenow/stage
         ls -l
         git config user.name 'donotdrivenow-deploy-bot'
         git config user.email 'donotdrivenow-deploy-bot@donotreply.example'
